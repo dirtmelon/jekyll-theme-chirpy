@@ -2,7 +2,7 @@
 layout: post
 title: MemorySafety
 date: 2020-09-30 10:15:10 +0800
-tags: [Swift，翻译]
+tags: [Swift, 翻译]
 categories: [Code, Swift]
 ---
 
