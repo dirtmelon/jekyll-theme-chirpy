@@ -199,7 +199,7 @@ NSDictionary <NSString *, NSNumber *> *dictionary;
 
 ```objc
 - (void)updateAnimated:(BOOL)animated completion:(void (^)(BOOL))completion {
-    // 1.
+    // 1. 如果不是空闲状态，则直接返回，调用 `completion(NO)` ；
     if (self.state != IGListDiffingSectionStateIdle) {
         if (completion != nil) {
             completion(NO);
@@ -222,9 +222,11 @@ NSDictionary <NSString *, NSNumber *> *dictionary;
         id<IGListDiffable> object = self.object;
         NSArray *newViewModels = [self.dataSource sectionController:self viewModelsForObject:object];
         self.viewModels = objectsWithDuplicateIdentifiersRemoved(newViewModels);
-  		  // 2.
+        // 2. 通过 IGListDiff 的算法计算出需要操作的位置
         result = IGListDiff(oldViewModels, self.viewModels, IGListDiffEquality);
-		  // 3.
+        // 3. 遍历 `updates` ，首先获取 `Cell` 所对应的 `index` ，
+        // 也就是旧的 `viewModels` 中的 `index` ，通过 `index` 获取到 `Cell` ，
+        // 然后使用新的 `index` 获取到新的 `viewModel` ，`Cell` 通过新的 `viewModel` 进行更新
         [result.updates enumerateIndexesUsingBlock:^(NSUInteger oldUpdatedIndex, BOOL *stop) {
             id identifier = [oldViewModels[oldUpdatedIndex] diffIdentifier];
             const NSInteger indexAfterUpdate = [result newIndexForIdentifier:identifier];
@@ -238,7 +240,7 @@ NSDictionary <NSString *, NSNumber *> *dictionary;
         if (IGListExperimentEnabled(self.collectionContext.experiments, IGListExperimentInvalidateLayoutForUpdates)) {
             [batchContext invalidateLayoutInSectionController:self atIndexes:result.updates];
         }
-		  // 4.
+        // 4. 通过 result 进行 `Cell` 的删除/插入
         [batchContext deleteInSectionController:self atIndexes:result.deletes];
         [batchContext insertInSectionController:self atIndexes:result.inserts];
 
@@ -255,11 +257,6 @@ NSDictionary <NSString *, NSNumber *> *dictionary;
     }];
 }
 ```
-
-1. 如果不是空闲状态，则直接返回，调用 `completion(NO)` ；
-2. 一番操作，获取新旧的 `viewModels` ；
-3. 遍历 `updates` ，首先获取 `Cell` 所对应的 `index` ，也就是旧的 `viewModels` 中的 `index` ，通过 `index` 获取到 `Cell` ，然后使用新的 `index` 获取到新的 `viewModel` ，`Cell` 通过新的 `viewModel` 进行更新；
-4. 常规操作，插入/删除/移动 `Cells` ；
 
 在获取 `Cell` 时， `IGListBindingSectionController` 也会自行进行 `Cell` 和 `Object` 的绑定， `Cell` 需要遵循 `IGListBindable` 协议：
 
@@ -331,7 +328,6 @@ NSDictionary <NSString *, NSNumber *> *dictionary;
     [objects enumerateObjectsUsingBlock:^(id object, NSUInteger idx, BOOL *stop) {
         IGListSectionController *sectionController = sectionControllers[idx];
 
-        // 2. 设置 map
         [self.sectionControllerToSectionMap setObject:@(idx) forKey:sectionController];
         [self.objectToSectionControllerMap setObject:sectionController forKey:object];
 
@@ -409,16 +405,16 @@ let adapter = ListAdapter(updater: ListAdapterUpdater(),
 
 ```objc
 - (void)_updateWorkingRangesWithListAdapter:(IGListAdapter *)listAdapter {
-    // 1.
+    // 1. 由于需要顺序的 `set` ，所以这里使用了 `std::set` ；
     std::set<NSInteger> visibleSectionSet = std::set<NSInteger>();
-    // 2. 
+    // 2. 插入所有可见的 `section` ；
     for (const _IGListWorkingRangeHandlerIndexPath &indexPath : _visibleSectionIndices) {
         visibleSectionSet.insert(indexPath.section);
     }
 
     NSInteger start;
     NSInteger end;
-    // 3.
+    // 3. 计算出开始和结束位置；
     if (visibleSectionSet.size() == 0) {
         start = 0;
         end = 0;
@@ -427,7 +423,7 @@ let adapter = ListAdapter(updater: ListAdapterUpdater(),
         end = MIN(*visibleSectionSet.rbegin() + 1 + _workingRangeSize, (NSInteger)listAdapter.objects.count);
     }
      
-    // 4. 
+    // 4. 创建新的 `workingRangeSectionControllers` ；
     _IGListWorkingRangeSectionControllerSet workingRangeSectionControllers (visibleSectionSet.size());
     for (NSInteger idx = start; idx < end; idx++) {
         id item = [listAdapter objectAtSection:idx];
@@ -435,7 +431,8 @@ let adapter = ListAdapter(updater: ListAdapterUpdater(),
         workingRangeSectionControllers.insert({sectionController});
     }
 
-    // 5. 
+    // 5. 遍历新的 `workingRangeSectionControllers` ，如果不在旧的 `_workingRangeSectionControllers` 中，
+    // 则表示这个 `sectionController` 是新加入的，调用 `sectionControllerWillEnterWorkingRange` ；
     for (const _IGListWorkingRangeHandlerSectionControllerWrapper &wrapper : workingRangeSectionControllers) {
         auto it = _workingRangeSectionControllers.find(wrapper);
         if (it == _workingRangeSectionControllers.end()) {
@@ -444,7 +441,8 @@ let adapter = ListAdapter(updater: ListAdapterUpdater(),
         }
     }
 
-    // 6.
+    // 6. 遍历旧的 `_workingRangeSectionControllers` ，如果不在新的 `workingRangeSectionControllers` 中，
+    // 则表示这个 `sectionController` 是已退出的，调用 `sectionControllerDidExitWorkingRange` ；
     for (const _IGListWorkingRangeHandlerSectionControllerWrapper &wrapper : _workingRangeSectionControllers) {
         auto it = workingRangeSectionControllers.find(wrapper);
         if (it == workingRangeSectionControllers.end()) {
@@ -457,12 +455,6 @@ let adapter = ListAdapter(updater: ListAdapterUpdater(),
 }
 ```
 
-1. 由于需要顺序的 `set` ，所以这里使用了 `std::set` ；
-2. 插入所有可见的 `section` ；
-3.  计算出开始和结束位置；
-4. 创建新的 `workingRangeSectionControllers` ；
-5. 遍历新的 `workingRangeSectionControllers` ，如果不在旧的 `_workingRangeSectionControllers` 中，则表示这个 `sectionController` 是新加入的，调用 `sectionControllerWillEnterWorkingRange` ；
-6. 遍历旧的 `_workingRangeSectionControllers` ，如果不在新的 `workingRangeSectionControllers` 中，则表示这个 `sectionController` 是已退出的，调用 `sectionControllerDidExitWorkingRange` ；
 可以看到由于 workingRange 是以 Section 为单位，所以无法提供精细到 Cell 级别的预处理。这也是基于 SectionController 进行处理的缺点。
 
 ## DisplayHandler
