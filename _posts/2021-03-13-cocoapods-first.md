@@ -78,6 +78,58 @@ gem 'fastlane'
 
 可以通过安装 [rubygems-bundler](https://github.com/rvm/rubygems-Bundler) 来避免每次都要输入 `bundle exec` ， 1.11.0 以上的 RVM 版本在安装 Ruby 时会默认安装 `rubygems-Bundler` ，可以通过 `gem list rubygems-Bundler` 来检查是否安装了这个 Gem 。
 
+[Bundler Version Autoswitch](https://bundler.io/v2.2/guides/bundler_2_upgrade.html#version-autoswitch)
+
+如果你安装了 Bundler 2 ，那么 Bundler 会根据 `Gemfile.lock` 中的版本自动进行切换。如果你的 lockfile 是使用 Bundler 1 进行创建，那么就会使用 Bundler 1 运行，如果是使用 Bundler 2 创建，那么就会使用 Bundler 2 运行。例如下面的 `Gemfile.lock` 是使用 Bundler 1.17.1 创建：
+
+```ruby
+GEM
+  remote: https://rubygems.org/
+  specs:
+    rack (2.0.6)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  rack
+
+BUNDLED WITH
+   1.17.1
+```
+
+Bundler 会读取 `BUNDLED WITH` 的区域来决定使用哪个版本，运行以下命令可以查看所使用的 Bundler 版本：
+
+```ruby
+$ grep -A 1 "BUNDLED WITH" Gemfile.lock
+BUNDLED WITH
+   1.17.1
+
+$ bundle version
+Bundler version 1.17.1
+```
+
+如果 Gemfile 是使用 Bundler 2 创建或者经由开发者手动从 Bundler 1 升级到 Bundler 2 ，那么就会使用 Bundler 2 版本运行：
+
+```ruby
+$ grep -A 1 "BUNDLED WITH" Gemfile.lock
+BUNDLED WITH
+   2.0.0
+
+$ bundle version
+Bundler version 2.0.0
+```
+
+而在应用环境外运行时，则会使用已安装的最新版本：
+
+```ruby
+$ ls -a
+.	..
+
+$ bundle version
+Bundler version 2.0.0
+```
+
 ## How to use CocoaPods plugins
 
 [CocoaPods Guides - How to use CocoaPods plugins](https://guides.cocoapods.org/plugins/setting-up-plugins.html)
