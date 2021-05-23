@@ -209,6 +209,6 @@ Demo 地址：
 
 延伸阅读：
 
-[Git Hooks | Learn how to use pre-commit hooks, post-commit hooks,      post-receive hooks, and more. | Matthew Hudson](https://githooks.com/)
+[Git Hooks | Learn how to use pre-commit hooks, post-commit hooks, post-receive hooks, and more.](https://githooks.com/)
 
 [Pro Git ](https://www.progit.cn/#_pro_git)
