@@ -296,7 +296,7 @@ static NSArray *objectsWithDuplicateIdentifiersRemoved(NSArray<id<IGListDiffable
                                      [weakSelf _exitBatchUpdates];
                                  }];
 }
-````
+```
 
 ### reloadDataWithCompletion:
 

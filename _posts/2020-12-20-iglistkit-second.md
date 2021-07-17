@@ -15,10 +15,9 @@ categories: [Code, Objective-C]
 - (void)didDeselectItemAtIndex:(NSInteger)index;
 - (void)didHighlightItemAtIndex:(NSInteger)index;
 - (void)didUnhighlightItemAtIndex:(NSInteger)index;
-- (void)didUnhighlightItemAtIndex:(NSInteger)index;
 ```
 
-由于 `IGListSectionController` 自己包含了 `Cell` 的配置（如 `size` ，类型等）和交互，所以 `IGListSectionController` 可以作为一个模块来复用，对于相同的 `Object` ，如果交互和界面都一致，则可以返回相同的 `IGListSectionController` ，即便是在不同的 `ViewController` 中。同时 `IGListSectionController` 也提供了一些 `Delegate` 和 `DataSource` ，在对应的时机会进行调用。
+由于 `IGListSectionController` 自己包含了 `Cell` 的配置（如 `size` ，类型等）和交互，所以 `IGListSectionController` 可以作为一个模块来复用，对于相同的 `Object` ，如果交互和界面都一致，则可以返回相同的 `IGListSectionController` 。同时 `IGListSectionController` 也提供了一些 `Delegate` 和 `DataSource` ，在对应的时机会进行调用。
 
 `id <IGListSupplementaryViewSource> supplementaryViewSource` ，用于配置 `UICollectionView` 每个 `section` 的 `supplementary views` ：
 
@@ -164,11 +163,9 @@ NSDictionary <NSString *, NSNumber *> *dictionary;
 ```
 
 ```swift
- ```
  func isEqual(toDiffableObject object: IGListDiffable?) -> Bool {
    return true
  }
- ```
 ```
 
 `IGListBindingSectionController` 内部重写了一些方法，通过 `IGListBindingSectionControllerDataSource` 和 `IGListBindingSectionControllerSelectionDelegate` 来和外部进行交互。
